@@ -1,16 +1,18 @@
-local m_typesArr = {}
 local m_reactions={}
 local m_configForm = nil
 local m_template = nil
 local m_mWdg = nil
 local m_rWdg = nil
 local m_bWdg = nil
+local m_critWdg = nil
 local m_amuletInfo = nil
 local m_shopCheckBox = nil
 local m_alhimCheckBox = nil
 local m_ordenCheckBox = nil
 local m_rEditLine = nil
 local m_eatRCheckBox = nil
+local m_guildCritCheckBox = nil
+local m_diffWdg = nil
 
 function AddReaction(name, func)
 	if not m_reactions then m_reactions={} end
@@ -37,19 +39,21 @@ function ChangeMainWndVisible()
 	setLocaleText(m_mWdg)
 	setLocaleText(m_rWdg)
 	setLocaleText(m_bWdg)
+	setLocaleText(m_critWdg)
+	setLocaleText(m_diffWdg)
 end
 
 local function GetTimestamp()
 	return common.GetMsFromDateTime( common.GetLocalDateTime() )
 end
 
-
-local function CalcDD(aM, aR, aB, aRLvl)
-	return (1+0.001*aM)*(1+0.001*aB)*(1+0.0015*aRLvl*aR)
+local function floor_to_step(aNum, aStep)
+   return math.floor(aNum/aStep+0.5)*aStep
 end
 
-local function CalcDDExt(aM, aR, aB, aRLvl, aPhis, aStih, aBozh, aPrirod, aDmgTypesKoef)
-	return (1+0.001*aM)*(1+0.001*aB)*(1+0.0015*aRLvl*aR)*(1+0.001296*aPhis*aDmgTypesKoef[0])*(1+0.001296*aStih*aDmgTypesKoef[1])*(1+0.001296*aBozh*aDmgTypesKoef[2])*(1+0.001296*aPrirod*aDmgTypesKoef[3])
+
+local function CalcDD(aM, aR, aB, aCrit, aRLvl)
+	return (1+0.0005*aM)*(1+0.0005*aB)*(1+0.00075*aRLvl*aR)*(1+0.0008*aCrit*0.5)
 end
 
 local function CheckPercentVal(aVal, aDefaultVal, aWdg)
@@ -64,20 +68,8 @@ function CalcPressed()
 	local currMaster = 0
 	local currResh = 0
 	local currBesp = 0
-	local currPhis = 0
-	local currStih = 0
-	local currBozh = 0
-	local currPrirod = 0
-	local useTypes = false
-	local dmgTypesKoef = {}
-	for i = 0, 3 do
-		local typeProcent = CheckPercentVal(tonumber(getText(m_typesArr[i].editWdg)), 0, m_typesArr[i].editWdg)
-		if typeProcent ~= 0 then
-			useTypes = true
-		end
-		dmgTypesKoef[i] = typeProcent / 100
-	end
-
+	local currCrit = 0
+	
 	local stats = avatar.GetInnateStats()
 	for i = 0, GetTableSize( stats ) - 1 do
 		local stat = stats[i]
@@ -91,23 +83,15 @@ function CalcPressed()
 			currBesp = stat.effective-stat.buffs
 		end
 	end
-	if useTypes then
-		local specStats = avatar.GetSpecialStats()
-		for i = 1, GetTableSize( specStats ) do
-			if toString(specStats[i].name) == "‘изический урон" then 
-				currPhis = specStats[i].effective-specStats[i].buffs
-			end
-			if toString(specStats[i].name) == "—тихийный урон" then 
-				currStih = specStats[i].effective-specStats[i].buffs
-			end
-			if toString(specStats[i].name) == "Ѕожественный урон" then 
-				currBozh = specStats[i].effective-specStats[i].buffs
-			end
-			if toString(specStats[i].name) == "ѕриродный урон" then 
-				currPrirod = specStats[i].effective-specStats[i].buffs
-			end		
+
+	local specStats = avatar.GetSpecialStats()
+	for i = 1, GetTableSize( specStats ) do
+		if toString(specStats[i].name) == "”дача" then 
+			currCrit = specStats[i].effective-specStats[i].buffs
+			break
 		end
 	end
+
 	
 	local amuletBonus = 0
 	local myDressedSlots = unit.GetEquipmentItemIds(avatar.GetId(), ITEM_CONT_EQUIPMENT) 
@@ -115,7 +99,7 @@ function CalcPressed()
 	if amulet then
 		local itemQuality = itemLib.GetQuality( amulet )
 		local quality = itemQuality and itemQuality.quality
-		--150 200 230 250 к мастерству раз в 60с на 15с + некоторое врем€ на срабатывание 10-25%
+		--150 200 230 250 270 к мастерству раз в 60с на 15с + некоторое врем€ на срабатывание 10-25%
 		if quality == ITEM_QUALITY_UNCOMMON then
 			amuletBonus = 30
 		elseif quality == ITEM_QUALITY_RARE then
@@ -124,6 +108,8 @@ function CalcPressed()
 			amuletBonus = 51
 		elseif quality == ITEM_QUALITY_LEGENDARY then
 			amuletBonus = 60
+		elseif quality == ITEM_QUALITY_RELIC then
+			amuletBonus = 65
 		end
 	end
 	
@@ -137,7 +123,8 @@ function CalcPressed()
 	local useOrden = getCheckBoxState(m_ordenCheckBox)
 	local useAlhim = getCheckBoxState(m_alhimCheckBox)
 	local useEatR = getCheckBoxState(m_eatRCheckBox)
-	local summaStat = currMaster+currResh+currBesp+amuletBonus
+	local useGuildCrit = getCheckBoxState(m_guildCritCheckBox)
+	local summaStat = currMaster+currResh+currBesp+currCrit+amuletBonus
 	if useShop then 
 		summaStat = summaStat + 100
 	end	
@@ -150,89 +137,49 @@ function CalcPressed()
 	maxRes.m = 0
 	maxRes.r = 0
 	maxRes.b = 0
-	maxRes.phis = 0
-	maxRes.stih = 0
-	maxRes.bozh = 0
-	maxRes.prirod = 0
-	if useTypes then
-		summaStat = summaStat + currPhis + currStih + currBozh + currPrirod
-		local typesLimit = 250
-		local step = 10
-		local elapsedStat = summaStat
-		if dmgTypesKoef[0]>0 and dmgTypesKoef[1]>0 and dmgTypesKoef[2]>0 and dmgTypesKoef[3]>0 then
-			step = 15
-		end
-		for phis=0, dmgTypesKoef[0]>0 and typesLimit or 1, step do
-			for stih=0, dmgTypesKoef[1]>0 and typesLimit or 1, step do
-				for bozh=0, dmgTypesKoef[2]>0 and typesLimit or 1, step do
-					for prirod=0, dmgTypesKoef[3]>0 and typesLimit or 1, step do
-						elapsedStat = summaStat-phis-bozh-stih-prirod
-						for m=amuletBonus, elapsedStat, step do
-							for b=0, elapsedStat-m, step do
-								local r = elapsedStat-b-m
-								if useOrden then
-									r = r + 100
-								end
-								if useEatR then
-									r = r + 25
-								end
-								local res = CalcDDExt(m, r, b, rLevelVal, phis, stih, bozh, prirod, dmgTypesKoef)
-								if res > maxRes.value then
-									maxRes.value = res
-									maxRes.m = m
-									maxRes.r = r
-									maxRes.b = b
-									maxRes.phis = phis
-									maxRes.stih = stih
-									maxRes.bozh = bozh
-									maxRes.prirod = prirod
-								end
-							end
-						end
-					end
-				end
-			end
-		end	
-		setText(m_typesArr[0].resultTxtWdg, tostring(math.floor(maxRes.phis)))
-		setText(m_typesArr[1].resultTxtWdg, tostring(math.floor(maxRes.stih)))
-		setText(m_typesArr[2].resultTxtWdg, tostring(math.floor(maxRes.bozh)))
-		setText(m_typesArr[3].resultTxtWdg, tostring(math.floor(maxRes.prirod)))
-	else
-		for m=amuletBonus, summaStat do
-			for b=0, summaStat-m do
-				local r = summaStat-b-m
+	maxRes.crit = 0
+	
+	local step = 10
+
+	for m=amuletBonus, summaStat, step do
+		for b=0, summaStat-m, step do
+			for crit=0, summaStat-m-b, step do
+				local r = summaStat-b-m-crit
 				if useOrden then
 					r = r + 100
 				end
 				if useEatR then
 					r = r + 25
 				end
-				local res = CalcDD(m, r, b, rLevelVal)
+				if useGuildCrit then
+					crit = crit + 40
+				end
+				local res = CalcDD(m, r, b, crit, rLevelVal)
 				if res > maxRes.value then
 					maxRes.value = res
 					maxRes.m = m
 					maxRes.r = r
 					maxRes.b = b
+					maxRes.crit = crit
 				end
 			end
 		end
-		for i = 0, 3 do
-			setLocaleText(m_typesArr[i].resultTxtWdg)
-		end	
 	end
-	--[[if useOrden then
-		maxRes.r = maxRes.r - 100
-	end]]--
+
 	--LogInfo("find res = ", maxRes.value, " myCurrRes = ", myCurrRes, " m= ", maxRes.m, " r= ", maxRes.r, " b= ", maxRes.b)
+
+	local currValue = CalcDD(currMaster, currResh, currBesp, currCrit, rLevelVal)	
+	local diff = floor_to_step((maxRes.value/currValue-1)*100, 0.001)
 	
 	setText(m_mWdg, tostring(math.floor(maxRes.m-amuletBonus)))
 	setText(m_rWdg, tostring(math.floor(maxRes.r)))
 	setText(m_bWdg, tostring(math.floor(maxRes.b)))
-	
+	setText(m_critWdg, tostring(math.floor(maxRes.crit)))
+	setText(m_diffWdg, tostring(diff).."%", "ColorGreen")
 	
 	
 	if amuletBonus > 0 then
-		setText(m_amuletInfo, getLocale()["amuletInfo"]..tostring(amuletBonus))
+		setText(m_amuletInfo, getLocale()["amuletInfo"]..tostring(amuletBonus), "ColorGray")
 	else
 		setText(m_amuletInfo, "")
 	end
@@ -242,7 +189,7 @@ end
 function InitConfigForm()
 	setTemplateWidget(m_template)
 	local formWidth = 500
-	local form=createWidget(mainForm, "ConfigForm", "Panel", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, formWidth, 600, 100, 120)
+	local form=createWidget(mainForm, "ConfigForm", "Panel", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, formWidth, 500, 100, 120)
 	priority(form, 5500)
 	hide(form)
 	local grShiftX = 25
@@ -250,7 +197,7 @@ function InitConfigForm()
 
 	local btnWidth = 220
 	
-	setLocaleText(createWidget(form, "calcButton", "Button", WIDGET_ALIGN_HIGH, WIDGET_ALIGN_LOW, btnWidth, 25, formWidth/2-btnWidth/2, 570))
+	setLocaleText(createWidget(form, "calcButton", "Button", WIDGET_ALIGN_HIGH, WIDGET_ALIGN_LOW, btnWidth, 25, formWidth/2-btnWidth/2, 470))
 
 	local descWdg = createWidget(form, "desc", "TextView", nil, nil, formWidth-25*2, 200, 25, 30)
 	setLocaleText(descWdg)
@@ -259,29 +206,37 @@ function InitConfigForm()
 	setLocaleText(createWidget(form, "lineM", "TextView", nil, nil, 600, 25, grShiftX, grShiftY))
 	setLocaleText(createWidget(form, "lineR", "TextView", nil, nil, 600, 25, grShiftX, grShiftY+30))
 	setLocaleText(createWidget(form, "lineB", "TextView", nil, nil, 600, 25, grShiftX, grShiftY+30*2))
+	setLocaleText(createWidget(form, "lineCrit", "TextView", nil, nil, 600, 25, grShiftX, grShiftY+30*3))
+	setLocaleText(createWidget(form, "lineDiff", "TextView", nil, nil, 600, 25, grShiftX, grShiftY+30*5))
+	
 
 	m_mWdg = createWidget(form, "resM", "TextView", nil, nil, 600, 25, formWidth/2+100, grShiftY)
 	m_rWdg = createWidget(form, "resR", "TextView", nil, nil, 600, 25, formWidth/2+100, grShiftY+30)
 	m_bWdg = createWidget(form, "resB", "TextView", nil, nil, 600, 25, formWidth/2+100, grShiftY+30*2)
+	m_critWdg = createWidget(form, "resCrit", "TextView", nil, nil, 600, 25, formWidth/2+100, grShiftY+30*3)
+	m_diffWdg = createWidget(form, "resDiff", "TextView", nil, nil, 600, 25, formWidth/2+100, grShiftY+30*5)
 	
-	m_amuletInfo = createWidget(form, "amuletInfo", "TextView", nil, nil, formWidth-grShiftX*2, 60, grShiftX, grShiftY+30*2+15)
+	m_amuletInfo = createWidget(form, "amuletInfo", "TextView", nil, nil, formWidth-grShiftX*2, 60, grShiftX, grShiftY+30*3+15)
 	m_amuletInfo:SetMultiline(true)
 	
-	m_eatRCheckBox = createWidget(form, "useEatR", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 460)
-	m_alhimCheckBox = createWidget(form, "useAlhim", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 485)
-	m_shopCheckBox = createWidget(form, "useShop", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 510)
-	m_ordenCheckBox = createWidget(form, "useOrden", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 535)
+	m_guildCritCheckBox = createWidget(form, "useGuildCrit", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 335)
+	m_eatRCheckBox = createWidget(form, "useEatR", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 360)
+	m_alhimCheckBox = createWidget(form, "useAlhim", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 385)
+	m_shopCheckBox = createWidget(form, "useShop", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 410)
+	m_ordenCheckBox = createWidget(form, "useOrden", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 435)
+	setCheckBox(m_guildCritCheckBox, false)
 	setCheckBox(m_eatRCheckBox, false)
 	setCheckBox(m_shopCheckBox, false)
 	setCheckBox(m_ordenCheckBox, false)
 	setCheckBox(m_alhimCheckBox, false)
 	
-	local wdg = createWidget(form, "amountOfR", "TextView", nil, nil, 160, 60, grShiftX, 510)
+	local wdg = createWidget(form, "amountOfR", "TextView", nil, nil, 160, 60, grShiftX, 410)
 	wdg:SetMultiline(true)
 	setLocaleText(wdg)
-	m_rEditLine = createWidget(form, "EditLine1", "EditLine", nil, nil, 40, 25, 90, 524, nil, nil)
+	m_rEditLine = createWidget(form, "EditLine1", "EditLine", nil, nil, 40, 25, 90, 424, nil, nil)
 	setText(m_rEditLine, "95")
 	
+	setLocaleText(m_guildCritCheckBox)
 	setLocaleText(m_eatRCheckBox)
 	setLocaleText(m_shopCheckBox)
 	setLocaleText(m_ordenCheckBox)
@@ -289,22 +244,9 @@ function InitConfigForm()
 	setLocaleText(m_mWdg)
 	setLocaleText(m_rWdg)
 	setLocaleText(m_bWdg)
-	
-	
-	local specDescWdg = createWidget(form, "specialDesc", "TextView", nil, nil, formWidth-25*2, 100, grShiftX, grShiftY+30*4)
-	setLocaleText(specDescWdg)
-	specDescWdg:SetMultiline(true)
-	
-	
-	for i = 0, 3 do
-		m_typesArr[i] = {}
-		local posY = grShiftY+30*6 + i*30 + 20
-		setLocaleText(createWidget(form, "type"..(i+1), "TextView", nil, nil, 300, 30, grShiftX, posY))
-		m_typesArr[i].editWdg = createWidget(form, "typeVal"..(i+1), "EditLine", nil, nil, 40, 25, 270, posY-2, nil, nil)
-		m_typesArr[i].resultTxtWdg = createWidget(form, "resType"..(i+1), "TextView", nil, nil, 150, 30, formWidth/2+100, posY)
-		setText(m_typesArr[i].editWdg, "0")
-		setLocaleText(m_typesArr[i].resultTxtWdg)
-	end	
+	setLocaleText(m_critWdg)
+	setLocaleText(m_diffWdg)
+
 
 	setText(createWidget(form, "closeBarsButton", "Button", WIDGET_ALIGN_HIGH, WIDGET_ALIGN_LOW, 20, 20, 20, 14), "x")
 	DnD:Init(form, form, true)
