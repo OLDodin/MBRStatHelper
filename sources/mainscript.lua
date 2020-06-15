@@ -83,6 +83,11 @@ local function CheckPercentVal(aVal, aDefaultVal, aWdg)
 end
 
 function CalcPressed()
+	local realMaster = 0
+	local realResh = 0
+	local realBesp = 0
+	local realCrit = 0
+
 	local currMaster = 0
 	local currResh = 0
 	local currBesp = 0
@@ -93,12 +98,15 @@ function CalcPressed()
 		local stat = stats[i]
 		if stat.sysName == "ENUM_InnateStats_Plain" then
 			currMaster = stat.effective-stat.buffs
+			realMaster = stat.effective
 		end
 		if stat.sysName == "ENUM_InnateStats_Rage" then
 			currResh = stat.effective-stat.buffs
+			realResh = stat.effective
 		end
 		if stat.sysName == "ENUM_InnateStats_Finisher" then
 			currBesp = stat.effective-stat.buffs
+			realBesp = stat.effective
 		end
 	end
 
@@ -106,6 +114,7 @@ function CalcPressed()
 	for i = 1, GetTableSize( specStats ) do
 		if toString(specStats[i].name) == "Удача" then 
 			currCrit = specStats[i].effective-specStats[i].buffs
+			realCrit = specStats[i].effective
 			break
 		end
 	end
@@ -186,7 +195,7 @@ function CalcPressed()
 
 	--LogInfo("find res = ", maxRes.value, " myCurrRes = ", myCurrRes, " m= ", maxRes.m, " r= ", maxRes.r, " b= ", maxRes.b)
 
-	local currValue = CalcDD(currMaster, currResh, currBesp, currCrit, rLevelVal)	
+	local currValue = CalcDD(realMaster, realResh, realBesp, realCrit, rLevelVal)	
 	local diff = floor_to_step((maxRes.value/currValue-1)*100, 0.001)
 	
 	setText(m_mWdg, tostring(math.floor(maxRes.m-amuletBonus)))
