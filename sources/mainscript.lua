@@ -193,9 +193,10 @@ function CalcPressed()
 		end
 	end
 
-	--LogInfo("find res = ", maxRes.value, " myCurrRes = ", myCurrRes, " m= ", maxRes.m, " r= ", maxRes.r, " b= ", maxRes.b)
+	--LogInfo("find res = ", maxRes.value, " m= ", maxRes.m, " r= ", maxRes.r, " b= ", maxRes.b, " crit = ", maxRes.crit)
 
-	local currValue = CalcDD(realMaster, realResh, realBesp, realCrit, rLevelVal)	
+	local currValue = CalcDD(realMaster+amuletBonus, realResh, realBesp, realCrit, rLevelVal)	
+	--LogInfo("currValue= ", currValue, " m= ", realMaster, " r= ", realResh, " b= ", realBesp, " crit = ", realCrit)
 	local diff = floor_to_step((maxRes.value/currValue-1)*100, 0.001)
 	
 	setText(m_mWdg, tostring(math.floor(maxRes.m-amuletBonus)))
