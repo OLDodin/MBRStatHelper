@@ -14,6 +14,8 @@ local m_eatRCheckBox = nil
 local m_guildCritCheckBox = nil
 local m_diffWdg = nil
 
+local MAX_HP = 10000
+
 function AddReaction(name, func)
 	if not m_reactions then m_reactions={} end
 	m_reactions[name]=func
@@ -51,10 +53,26 @@ local function floor_to_step(aNum, aStep)
    return math.floor(aNum/aStep+0.5)*aStep
 end
 
-
 local function CalcDD(aM, aR, aB, aCrit, aRLvl)
-	return (1+0.0005*aM)*(1+0.0005*aB)*(1+0.00075*aRLvl*aR)*(1+0.0008*aCrit*0.5)
+	return (1+0.0005*aM)*(1+0.0005*aB)*(1+0.00075*aRLvl*aR)*(1+0.0004*aCrit)
 end
+
+
+local function CalcDDByHp(aM, aR, aB, aCrit, aRLvl, aHP)
+	return (1+0.0005*aM)*(1+(0.001 + 0.00000012852*aB)*(1-aHP/MAX_HP)*aB)*(1+0.00075*aRLvl*aR)*(1+0.0004*aCrit)
+end
+
+local function CalcKillTime(aM, aR, aB, aCrit, aRLvl)
+	local currHP = MAX_HP
+	local killTime = 0
+	while currHP > 0 do
+		currHP = currHP - CalcDDByHp(aM, aR, aB, aCrit, aRLvl, currHP)
+		killTime = killTime + 1
+	end
+	
+	return killTime
+end
+
 
 local function CheckPercentVal(aVal, aDefaultVal, aWdg)
 	if not aVal or aVal < 0 or aVal > 100 then
