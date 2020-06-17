@@ -8,13 +8,21 @@ local m_critWdg = nil
 local m_amuletInfo = nil
 local m_shopCheckBox = nil
 local m_alhimCheckBox = nil
+local m_doblestCheckBox = nil
 local m_ordenCheckBox = nil
 local m_rEditLine = nil
+local m_artEditLine = nil
 local m_eatRCheckBox = nil
 local m_guildCritCheckBox = nil
 local m_diffWdg = nil
 
-local MAX_HP = 10000
+local KILL_TIME = 1
+local DD_KOEF = 2
+local MAX_HP = 1000
+
+local DOBLEST_M = 1
+local DOBLEST_R = 2
+local DOBLEST_B = 3
 
 function AddReaction(name, func)
 	if not m_reactions then m_reactions={} end
@@ -45,44 +53,88 @@ function ChangeMainWndVisible()
 	setLocaleText(m_diffWdg)
 end
 
+function GetArtBonus(anArtLevel)
+	if anArtLevel == 0 then
+		return 1
+	end
+	local startBonus = 1.025
+	if anArtLevel <= 5 then
+		return 1.025 + 0.0125*(anArtLevel-1)
+	else
+		return 1.075 + 0.002777*(anArtLevel-1)
+	end
+end
+
 local function GetTimestamp()
 	return common.GetMsFromDateTime( common.GetLocalDateTime() )
 end
 
-local function floor_to_step(aNum, aStep)
+local function FloorToStep(aNum, aStep)
    return math.floor(aNum/aStep+0.5)*aStep
 end
 
+local function GetCritPart(aCrit)
+	if aCrit <= 750 then
+		return 1+0.0004*aCrit
+	else
+		return 1+(0.0004-0.0000001906*(aCrit-750))*aCrit
+	end
+end
+
 local function CalcDD(aM, aR, aB, aCrit, aRLvl)
-	return (1+0.0005*aM)*(1+0.0005*aB)*(1+0.00075*aRLvl*aR)*(1+0.0004*aCrit)
+	return (1+0.0005*aM)*(1+0.0005*aB)*(1+0.00075*aRLvl*aR)*GetCritPart(aCrit)
 end
 
 
-local function CalcDDByHp(aM, aR, aB, aCrit, aRLvl, aHP)
-	return (1+0.0005*aM)*(1+(0.001 + 0.00000012852*aB)*(1-aHP/MAX_HP)*aB)*(1+0.00075*aRLvl*aR)*(1+0.0004*aCrit)
-end
-
-local function CalcKillTime(aM, aR, aB, aCrit, aRLvl)
-	local currHP = MAX_HP
+local function CalcKillTime(aM, aR, aB, aCrit, aRLvl, aFullHP)
+	local currHP = aFullHP
 	local killTime = 0
+	local constPart1 = (1+0.0005*aM)*(1+0.00075*aRLvl*aR)*GetCritPart(aCrit)
+	local constPart2 = (0.001 + 0.00000012852*aB)*aB
 	while currHP > 0 do
-		currHP = currHP - CalcDDByHp(aM, aR, aB, aCrit, aRLvl, currHP)
+		currHP = currHP - constPart1*(1 + constPart2*(1-currHP/aFullHP))
 		killTime = killTime + 1
 	end
 	
 	return killTime
 end
 
+local function CalcResult(aM, aR, aB, aCrit, aRLvl, aType, aFullHP)
+	if aType == DD_KOEF then
+		return CalcDD(aM, aR, aB, aCrit, aRLvl)
+	elseif aType == KILL_TIME then
+		return CalcKillTime(aM, aR, aB, aCrit, aRLvl, aFullHP)
+	end
+end
 
-local function CheckPercentVal(aVal, aDefaultVal, aWdg)
-	if not aVal or aVal < 0 or aVal > 100 then
+local function CheckPercentVal(aVal, aDefaultVal, aMinVal, aMaxVal, aWdg)
+	if not aVal or aVal < aMinVal or aVal > aMaxVal then
 		aVal = aDefaultVal
 		setText(aWdg, tostring(aVal))
 	end
 	return aVal
 end
 
-function CalcPressed()
+local function IsBetterResult(anOldResult, aNewResult, aType)
+	if anOldResult == 0 then
+		return true
+	end
+	if aType == DD_KOEF then
+		return aNewResult > anOldResult
+	elseif aType == KILL_TIME then
+		return aNewResult < anOldResult
+	end
+end
+
+function CalcPressed1()
+	CalcPressed(DD_KOEF)
+end
+
+function CalcPressed2()
+	CalcPressed(KILL_TIME)
+end
+
+function CalcPressed(aType)
 	local realMaster = 0
 	local realResh = 0
 	local realBesp = 0
@@ -142,13 +194,19 @@ function CalcPressed()
 	
 	local rLevelTxt = getText(m_rEditLine)
 	local rLevelVal = tonumber(rLevelTxt)
-	rLevelVal = CheckPercentVal(rLevelVal, 95, m_rEditLine)
+	rLevelVal = CheckPercentVal(rLevelVal, 95, 0, 100, m_rEditLine)
 	
 	rLevelVal = rLevelVal / 100
+	
+	local artLevelTxt = getText(m_artEditLine)
+	local artLevelVal = tonumber(artLevelTxt)
+	artLevelVal = CheckPercentVal(artLevelVal, 5, 0, 10, m_artEditLine)
+	local doblestStats = math.floor(872 * GetArtBonus(artLevelVal))
 	
 	local useShop = getCheckBoxState(m_shopCheckBox)
 	local useOrden = getCheckBoxState(m_ordenCheckBox)
 	local useAlhim = getCheckBoxState(m_alhimCheckBox)
+	local useDoblest = getCheckBoxState(m_doblestCheckBox)
 	local useEatR = getCheckBoxState(m_eatRCheckBox)
 	local useGuildCrit = getCheckBoxState(m_guildCritCheckBox)
 	local summaStat = currMaster+currResh+currBesp+currCrit+amuletBonus
@@ -159,51 +217,117 @@ function CalcPressed()
 		summaStat = summaStat + 50
 	end
 	
+	local topEquals = {}
+	
+	local resM, resR, resB, resCrit
 	local maxRes = {}
 	maxRes.value = 0
 	maxRes.m = 0
 	maxRes.r = 0
 	maxRes.b = 0
 	maxRes.crit = 0
+	maxRes.doblestType = 0
 	
-	local step = 10
+	local step = 20
 
 	for m=amuletBonus, summaStat, step do
 		for b=0, summaStat-m, step do
 			for crit=0, summaStat-m-b, step do
-				local r = summaStat-b-m-crit
+				resM = m
+				resB = b
+				resR = summaStat-b-m-crit
+				resCrit = crit
+				if useDoblest then
+					local maxVal = math.max(m, resR, b)
+					if m == maxVal then
+						resM = m + doblestStats
+						maxRes.doblestType = DOBLEST_M
+					elseif resR == maxVal then
+						resR = resR + doblestStats
+						maxRes.doblestType = DOBLEST_R
+					else
+						resB = b + doblestStats
+						maxRes.doblestType = DOBLEST_B
+					end
+				end
 				if useOrden then
-					r = r + 100
+					resR = resR + 100
 				end
 				if useEatR then
-					r = r + 25
+					resR = resR + 25
 				end
 				if useGuildCrit then
-					crit = crit + 40
+					resCrit = crit + 40
 				end
-				local res = CalcDD(m, r, b, crit, rLevelVal)
-				if res > maxRes.value then
+				local res = CalcResult(resM, resR, resB, resCrit, rLevelVal, aType, 1000)
+				if IsBetterResult(maxRes.value, res, aType) then
 					maxRes.value = res
-					maxRes.m = m
-					maxRes.r = r
-					maxRes.b = b
-					maxRes.crit = crit
+					maxRes.m = resM
+					maxRes.r = resR
+					maxRes.b = resB
+					maxRes.crit = resCrit
+					
+					topEquals = {}
+					table.insert(topEquals, copyTable(maxRes))
+				elseif maxRes.value == res then
+					table.insert(topEquals, {m=resM, r=resR, b=resB, crit=resCrit, doblestType=maxRes.doblestType})
 				end
 			end
 		end
 	end
-
-	--LogInfo("find res = ", maxRes.value, " m= ", maxRes.m, " r= ", maxRes.r, " b= ", maxRes.b, " crit = ", maxRes.crit)
-
-	local currValue = CalcDD(realMaster+amuletBonus, realResh, realBesp, realCrit, rLevelVal)	
-	--LogInfo("currValue= ", currValue, " m= ", realMaster, " r= ", realResh, " b= ", realBesp, " crit = ", realCrit)
-	local diff = floor_to_step((maxRes.value/currValue-1)*100, 0.001)
 	
-	setText(m_mWdg, tostring(math.floor(maxRes.m-amuletBonus)))
-	setText(m_rWdg, tostring(math.floor(maxRes.r)))
-	setText(m_bWdg, tostring(math.floor(maxRes.b)))
+	--LogInfo("topEquals ", GetTableSize(topEquals))
+	--тут для одинаковых результатов увеличиваем точность в 1000 раз и считаем снова
+	for i = 1, GetTableSize(topEquals) do
+		if i==1 then
+			maxRes.value = 0
+			maxRes.m = 0
+			maxRes.r = 0
+			maxRes.b = 0
+			maxRes.crit = 0
+			maxRes.doblestType = 0
+		end
+		local data = topEquals[i]
+		local res = CalcResult(data.m, data.r, data.b, data.crit, rLevelVal, aType, 1000000)
+		if IsBetterResult(maxRes.value, res, aType) then
+			maxRes.value = res
+			maxRes.m = data.m
+			maxRes.r = data.r
+			maxRes.b = data.b
+			maxRes.crit = data.crit
+			maxRes.doblestType = data.doblestType
+		end
+	end
+
+	local currValue = CalcResult(realMaster+amuletBonus, realResh, realBesp, realCrit, rLevelVal, aType, 1000000)	
+	local diff = 0
+	if aType == KILL_TIME then
+		diff = FloorToStep((currValue/maxRes.value-1)*100, 0.001)
+	else
+		diff = FloorToStep((maxRes.value/currValue-1)*100, 0.001)
+	end
+	
+	if maxRes.doblestType == DOBLEST_M then
+		setText(m_mWdg, tostring(math.floor(maxRes.m-amuletBonus-doblestStats)).."+"..tostring(doblestStats))
+	else
+		setText(m_mWdg, tostring(math.floor(maxRes.m-amuletBonus)))
+	end
+	if maxRes.doblestType == DOBLEST_R then
+		setText(m_rWdg, tostring(math.floor(maxRes.r-doblestStats)).."+"..tostring(doblestStats))
+	else
+		setText(m_rWdg, tostring(math.floor(maxRes.r)))
+	end
+	if maxRes.doblestType == DOBLEST_B then
+		setText(m_bWdg, tostring(math.floor(maxRes.b-doblestStats)).."+"..tostring(doblestStats))
+	else
+		setText(m_bWdg, tostring(math.floor(maxRes.b)))
+	end
 	setText(m_critWdg, tostring(math.floor(maxRes.crit)))
-	setText(m_diffWdg, tostring(diff).."%", "ColorGreen")
+	if diff > 0 then
+		setText(m_diffWdg, tostring(diff).."%", "ColorGreen")
+	else
+		setText(m_diffWdg, tostring(diff).."%", "ColorRed")
+	end
 	
 	
 	if amuletBonus > 0 then
@@ -217,15 +341,16 @@ end
 function InitConfigForm()
 	setTemplateWidget(m_template)
 	local formWidth = 500
-	local form=createWidget(mainForm, "ConfigForm", "Panel", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, formWidth, 500, 100, 120)
+	local form=createWidget(mainForm, "ConfigForm", "Panel", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, formWidth, 530, 100, 120)
 	priority(form, 5500)
 	hide(form)
 	local grShiftX = 25
 	local grShiftY = 140
 
-	local btnWidth = 220
+	local btnWidth = 160
 	
-	setLocaleText(createWidget(form, "calcButton", "Button", WIDGET_ALIGN_HIGH, WIDGET_ALIGN_LOW, btnWidth, 25, formWidth/2-btnWidth/2, 470))
+	setLocaleText(createWidget(form, "calcButton1", "Button", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, btnWidth, 25, 50, 500))
+	setLocaleText(createWidget(form, "calcButton2", "Button", WIDGET_ALIGN_HIGH, WIDGET_ALIGN_LOW, btnWidth, 25, 50, 500))
 
 	local descWdg = createWidget(form, "desc", "TextView", nil, nil, formWidth-25*2, 200, 25, 30)
 	setLocaleText(descWdg)
@@ -252,23 +377,32 @@ function InitConfigForm()
 	m_alhimCheckBox = createWidget(form, "useAlhim", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 385)
 	m_shopCheckBox = createWidget(form, "useShop", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 410)
 	m_ordenCheckBox = createWidget(form, "useOrden", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 435)
+	m_doblestCheckBox = createWidget(form, "useDoblest", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 460)
 	setCheckBox(m_guildCritCheckBox, false)
 	setCheckBox(m_eatRCheckBox, false)
 	setCheckBox(m_shopCheckBox, false)
 	setCheckBox(m_ordenCheckBox, false)
 	setCheckBox(m_alhimCheckBox, false)
+	setCheckBox(m_doblestCheckBox, false)
 	
-	local wdg = createWidget(form, "amountOfR", "TextView", nil, nil, 160, 60, grShiftX, 410)
+	local wdg = createWidget(form, "amountOfR", "TextView", nil, nil, 160, 60, grShiftX, 400)
 	wdg:SetMultiline(true)
 	setLocaleText(wdg)
-	m_rEditLine = createWidget(form, "EditLine1", "EditLine", nil, nil, 40, 25, 90, 424, nil, nil)
+	m_rEditLine = createWidget(form, "EditLine1", "EditLine", nil, nil, 40, 25, 90, 414, nil, nil)
 	setText(m_rEditLine, "95")
+	
+	wdg = createWidget(form, "lvlOfArt", "TextView", nil, nil, 160, 60, grShiftX, 450)
+	wdg:SetMultiline(true)
+	setLocaleText(wdg)
+	m_artEditLine = createWidget(form, "EditLine2", "EditLine", nil, nil, 40, 25, 90, 464, nil, nil)
+	setText(m_artEditLine, "5")
 	
 	setLocaleText(m_guildCritCheckBox)
 	setLocaleText(m_eatRCheckBox)
 	setLocaleText(m_shopCheckBox)
 	setLocaleText(m_ordenCheckBox)
 	setLocaleText(m_alhimCheckBox)
+	setLocaleText(m_doblestCheckBox)
 	setLocaleText(m_mWdg)
 	setLocaleText(m_rWdg)
 	setLocaleText(m_bWdg)
@@ -280,7 +414,8 @@ function InitConfigForm()
 	DnD:Init(form, form, true)
 	AddReaction("closeBarsButton", function () ChangeMainWndVisible() end)
 	
-	AddReaction("calcButton", CalcPressed)
+	AddReaction("calcButton1", CalcPressed1)
+	AddReaction("calcButton2", CalcPressed2)
 	
 	return form
 end

@@ -296,6 +296,14 @@ function getModFromFlags(flags)
 	return ctrl, alt, shift
 end
 
+function copyTable(t)
+	local result = { }
+	for k, v in pairs( t ) do
+		result[k] = v
+	end
+	return result
+end
+
 --------------------------------------------------------------------------------
 -- Locales functions
 --------------------------------------------------------------------------------
