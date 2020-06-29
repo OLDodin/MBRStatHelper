@@ -9,6 +9,7 @@ local m_amuletInfo = nil
 local m_shopCheckBox = nil
 local m_alhimCheckBox = nil
 local m_doblestCheckBox = nil
+local m_ornamentCheckBox = nil
 local m_ordenCheckBox = nil
 local m_rEditLine = nil
 local m_artEditLine = nil
@@ -209,6 +210,7 @@ function CalcPressed(aType)
 	local useDoblest = getCheckBoxState(m_doblestCheckBox)
 	local useEatR = getCheckBoxState(m_eatRCheckBox)
 	local useGuildCrit = getCheckBoxState(m_guildCritCheckBox)
+	local useOrnament = getCheckBoxState(m_ornamentCheckBox)
 	local summaStat = currMaster+currResh+currBesp+currCrit+amuletBonus
 	if useShop then 
 		summaStat = summaStat + 100
@@ -258,6 +260,10 @@ function CalcPressed(aType)
 				end
 				if useGuildCrit then
 					resCrit = crit + 40
+				end
+				if useOrnament then
+					resM = resM + 48
+					resCrit = resCrit + 48
 				end
 				local res = CalcResult(resM, resR, resB, resCrit, rLevelVal, aType, 1000)
 				if IsBetterResult(maxRes.value, res, aType) then
@@ -341,7 +347,7 @@ end
 function InitConfigForm()
 	setTemplateWidget(m_template)
 	local formWidth = 500
-	local form=createWidget(mainForm, "ConfigForm", "Panel", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, formWidth, 530, 100, 120)
+	local form=createWidget(mainForm, "ConfigForm", "Panel", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, formWidth, 555, 100, 120)
 	priority(form, 5500)
 	hide(form)
 	local grShiftX = 25
@@ -349,8 +355,8 @@ function InitConfigForm()
 
 	local btnWidth = 160
 	
-	setLocaleText(createWidget(form, "calcButton1", "Button", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, btnWidth, 25, 50, 500))
-	setLocaleText(createWidget(form, "calcButton2", "Button", WIDGET_ALIGN_HIGH, WIDGET_ALIGN_LOW, btnWidth, 25, 50, 500))
+	setLocaleText(createWidget(form, "calcButton1", "Button", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, btnWidth, 25, 50, 525))
+	setLocaleText(createWidget(form, "calcButton2", "Button", WIDGET_ALIGN_HIGH, WIDGET_ALIGN_LOW, btnWidth, 25, 50, 525))
 
 	local descWdg = createWidget(form, "desc", "TextView", nil, nil, formWidth-25*2, 200, 25, 30)
 	setLocaleText(descWdg)
@@ -378,12 +384,14 @@ function InitConfigForm()
 	m_shopCheckBox = createWidget(form, "useShop", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 410)
 	m_ordenCheckBox = createWidget(form, "useOrden", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 435)
 	m_doblestCheckBox = createWidget(form, "useDoblest", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 460)
+	m_ornamentCheckBox = createWidget(form, "useOrnament", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 320, 25, 170, 485)
 	setCheckBox(m_guildCritCheckBox, false)
 	setCheckBox(m_eatRCheckBox, false)
 	setCheckBox(m_shopCheckBox, false)
 	setCheckBox(m_ordenCheckBox, false)
 	setCheckBox(m_alhimCheckBox, false)
 	setCheckBox(m_doblestCheckBox, false)
+	setCheckBox(m_ornamentCheckBox, false)
 	
 	local wdg = createWidget(form, "amountOfR", "TextView", nil, nil, 160, 60, grShiftX, 400)
 	wdg:SetMultiline(true)
@@ -403,6 +411,7 @@ function InitConfigForm()
 	setLocaleText(m_ordenCheckBox)
 	setLocaleText(m_alhimCheckBox)
 	setLocaleText(m_doblestCheckBox)
+	setLocaleText(m_ornamentCheckBox)
 	setLocaleText(m_mWdg)
 	setLocaleText(m_rWdg)
 	setLocaleText(m_bWdg)
