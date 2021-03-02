@@ -199,10 +199,11 @@ function CalcPressed(aType)
 	
 	rLevelVal = rLevelVal / 100
 	
-	local artLevelTxt = getText(m_artEditLine)
+	--[[local artLevelTxt = getText(m_artEditLine)
 	local artLevelVal = tonumber(artLevelTxt)
 	artLevelVal = CheckPercentVal(artLevelVal, 5, 0, 10, m_artEditLine)
-	local doblestStats = math.floor(872 * GetArtBonus(artLevelVal))
+	local doblestStats = math.floor(872 * GetArtBonus(artLevelVal))]]
+	local doblestStats = 500
 	
 	local useShop = getCheckBoxState(m_shopCheckBox)
 	local useOrden = getCheckBoxState(m_ordenCheckBox)
@@ -398,13 +399,13 @@ function InitConfigForm()
 	setLocaleText(wdg)
 	m_rEditLine = createWidget(form, "EditLine1", "EditLine", nil, nil, 40, 25, 90, 414, nil, nil)
 	setText(m_rEditLine, "95")
-	
+	--[[
 	wdg = createWidget(form, "lvlOfArt", "TextView", nil, nil, 160, 60, grShiftX, 450)
 	wdg:SetMultiline(true)
 	setLocaleText(wdg)
 	m_artEditLine = createWidget(form, "EditLine2", "EditLine", nil, nil, 40, 25, 90, 464, nil, nil)
 	setText(m_artEditLine, "5")
-	
+	]]
 	setLocaleText(m_guildCritCheckBox)
 	setLocaleText(m_eatRCheckBox)
 	setLocaleText(m_shopCheckBox)
