@@ -338,7 +338,7 @@ function CalcPressed(aType)
 	
 	
 	if amuletBonus > 0 then
-		setText(m_amuletInfo, getLocale()["amuletInfo"]..tostring(amuletBonus), "ColorGray")
+		setText(m_amuletInfo, ConcatWString(getLocale()["amuletInfo"], toWString(amuletBonus)), "ColorGray")
 	else
 		setText(m_amuletInfo, "")
 	end

@@ -35,12 +35,16 @@ function toWString(text)
 	return text
 end
 
-function toString(text)
+local function toStringUtils(text)
 	if not text then return nil end
 	if common.IsWString(text) then
 		text=userMods.FromWString(text)
 	end
 	return tostring(text)
+end
+
+function toString(text)
+	return toStringUtils(text)
 end
 
 
@@ -61,8 +65,45 @@ function findWord(text)
 	return pairs({toString(text)})
 end
 
+function ConcatWStringFromTable(aTable)
+	local vt = common.CreateValuedText()
+	
+	local valuedTxtFormatStr = "<rs class=\"class\">"
+	local i = 0
+    for k, v in pairs( aTable ) do
+        if v and common.IsWString(v) then
+			valuedTxtFormatStr = valuedTxtFormatStr.."<r name=\"obj"..i.."\"/>" 
+			i = i + 1
+        end
+    end
+	valuedTxtFormatStr = valuedTxtFormatStr.."</rs>"
+	
+	local tableFormat = {
+		format = userMods.ToWString(valuedTxtFormatStr),	
+	}
+	common.SetTextValues( vt, tableFormat )
+	
+	i = 0
+	for k, v in pairs( aTable ) do
+        if v and common.IsWString(v) then
+			vt:SetVal("obj"..i, v)
+			i = i + 1
+        end
+    end
+	
+	return common.ExtractWStringFromValuedText( vt )
+end 
+
+function ConcatWString(...)
+	local arg = { ... }
+	return ConcatWStringFromTable(arg)
+end 
+
 function formatText(text, align, fontSize, shadow, outline, fontName)
-	return "<body fontname='"..(toString(fontName) or "AllodsWest").."' alignx = '"..(toString(align) or "left").."' fontsize='"..(toString(fontSize) or "14").."' shadow='"..(toString(shadow) or "1").."' outline='"..(toString(outline) or "0").."'><rs class='color'>"..(toString(text) or "").."</rs></body>"
+	local firstPart = "<body fontname='"..(toStringUtils(fontName) or "AllodsWest").."' alignx = '"..(toStringUtils(align) or "left").."' fontsize='"..(toStringUtils(fontSize) or "14").."' shadow='"..(toStringUtils(shadow) or "0").."' outline='"..(toStringUtils(outline) or "1").."'><rs class='color'>"
+	local textMessage = toWString(text) or common.GetEmptyWString()
+	local secondPart = "</rs></body>"
+	return ConcatWString(toWString(firstPart), textMessage, toWString(secondPart))
 end
 
 function toValuedText(text, color, align, fontSize, shadow, outline, fontName)
@@ -195,7 +236,7 @@ end
 
 function setText(widget, text, color, align, fontSize, shadow, outline, fontName)
 	if not widget then return nil end
-	text=userMods.ToWString(text or "")
+	text=toWString(text or "")
 	if widget.SetVal 		then widget:SetVal("button_label", text)  end
 	--if widget.SetTextColor	then widget:SetTextColor("button_label", { a = 1, r = 1, g = 0, b = 0 } ) end --ENUM_ColorType_SHADOW
 	if widget.SetText		then widget:SetText(text) end

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UIRelatedTexts>
+  <items>
+    <Item>
+      <name>lineM</name>
+      <resource href="lineM.txt"/>
+    </Item>
+    <Item>
+      <name>lineR</name>
+      <resource href="lineR.txt"/>
+    </Item>
+    <Item>
+      <name>lineB</name>
+      <resource href="lineB.txt"/>
+    </Item>
+    <Item>
+      <name>lineCrit</name>
+      <resource href="lineCrit.txt"/>
+    </Item>
+    <Item>
+      <name>lineDiff</name>
+      <resource href="lineDiff.txt"/>
+    </Item>
+    <Item>
+      <name>resM</name>
+      <resource href="resM.txt"/>
+    </Item>
+    <Item>
+      <name>resR</name>
+      <resource href="resR.txt"/>
+    </Item>
+    <Item>
+      <name>resB</name>
+      <resource href="resB.txt"/>
+    </Item>
+    <Item>
+      <name>resDiff</name>
+      <resource href="resDiff.txt"/>
+    </Item>
+    <Item>
+      <name>resCrit</name>
+      <resource href="resCrit.txt"/>
+    </Item>
+    <Item>
+      <name>resType1</name>
+      <resource href="resType1.txt"/>
+    </Item>
+    <Item>
+      <name>resType2</name>
+      <resource href="resType2.txt"/>
+    </Item>
+    <Item>
+      <name>resType3</name>
+      <resource href="resType3.txt"/>
+    </Item>
+    <Item>
+      <name>resType4</name>
+      <resource href="resType4.txt"/>
+    </Item>
+    <Item>
+      <name>calcButton1</name>
+      <resource href="calcButton1.txt"/>
+    </Item>
+    <Item>
+      <name>calcButton2</name>
+      <resource href="calcButton2.txt"/>
+    </Item>
+    <Item>
+      <name>desc</name>
+      <resource href="desc.txt"/>
+    </Item>
+    <Item>
+      <name>amuletInfo</name>
+      <resource href="amuletInfo.txt"/>
+    </Item>
+    <Item>
+      <name>useShop</name>
+      <resource href="useShop.txt"/>
+    </Item>
+    <Item>
+      <name>useOrden</name>
+      <resource href="useOrden.txt"/>
+    </Item>
+    <Item>
+      <name>amountOfR</name>
+      <resource href="amountOfR.txt"/>
+    </Item>
+    <Item>
+      <name>useAlhim</name>
+      <resource href="useAlhim.txt"/>
+    </Item>
+    <Item>
+      <name>useEatR</name>
+      <resource href="useEatR.txt"/>
+    </Item>
+    <Item>
+      <name>useGuildCrit</name>
+      <resource href="useGuildCrit.txt"/>
+    </Item>
+    <Item>
+      <name>useDoblest</name>
+      <resource href="useDoblest.txt"/>
+    </Item>
+    <Item>
+      <name>useOrnament</name>
+      <resource href="useOrnament.txt"/>
+    </Item>
+    <Item>
+      <name>type1</name>
+      <resource href="type1.txt"/>
+    </Item>
+    <Item>
+      <name>type2</name>
+      <resource href="type2.txt"/>
+    </Item>
+    <Item>
+      <name>type3</name>
+      <resource href="type3.txt"/>
+    </Item>
+    <Item>
+      <name>type4</name>
+      <resource href="type4.txt"/>
+    </Item>
+    <Item>
+      <name>lvlOfArt</name>
+      <resource href="lvlOfArt.txt"/>
+    </Item>
+  </items>
+</UIRelatedTexts>

@@ -23,7 +23,16 @@
 		<Item href="AOPanelSupport.lua"/>
 		<Item href="mainscript.lua"/>
 	</ScriptFileRefs>
-	<texts href="RelatedTexts.(UIRelatedTexts).xdb#xpointer(/UIRelatedTexts)" />
+	<textsGroups>
+		<Item>
+			<groupName>rus</groupName>
+			<texts href="Locales/rus/Locale.(UIRelatedTexts).xdb#xpointer(/UIRelatedTexts)"/>
+		</Item>
+		<Item>
+			<groupName>eng</groupName>
+			<texts href="Locales/eng/Locale.(UIRelatedTexts).xdb#xpointer(/UIRelatedTexts)"/>
+		</Item>
+	</textsGroups>
   
   <textures href="Widgets/Textures/Textures.xdb#xpointer(/UIRelatedTextures)"/>
   <visObjects href=""/>
