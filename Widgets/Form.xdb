@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <WidgetForm>
-	<Name>FPSIncrease</Name>
+	<Name>MBRStatHelper</Name>
 	<Priority>4550</Priority>
+	<Children>
+		<Item href="Templates/Main.xdb#xpointer(/WidgetPanel)"/>
+	</Children>
 	<BackLayer href="" />
 	<FrontLayer href="" />
 	<Placement>

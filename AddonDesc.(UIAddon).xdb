@@ -6,10 +6,6 @@
 			<Id>Main</Id>
 			<Form href="Widgets/Form.xdb#xpointer(/WidgetForm)"/>
 		</Item>
-		<Item>
-			<Id>Template</Id>
-			<Form href="Widgets/Templates/Main.xdb#xpointer(/WidgetForm)"/>
-		</Item>
 	</Forms>
 	<MainFormId>Main</MainFormId>
 	<Name>MBRStatHelper</Name>

@@ -432,7 +432,7 @@ end
 
 
 function Init()
-	m_template = createWidget(nil, "Template", "Template")
+	m_template = getChild(mainForm, "Template")
 	setTemplateWidget(m_template)
 		
 	local button=createWidget(mainForm, "AORBMButton", "Button", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 50, 25, 300, 120)
