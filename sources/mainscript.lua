@@ -43,9 +43,9 @@ end
 
 function ChangeMainWndVisible()
 	if isVisible(m_configForm) then
-		hide(m_configForm)
+		DnD.HideWdg(m_configForm)
 	else
-		show(m_configForm)
+		DnD.ShowWdg(m_configForm)
 	end
 	setLocaleText(m_mWdg)
 	setLocaleText(m_rWdg)
@@ -421,7 +421,7 @@ function InitConfigForm()
 
 
 	setText(createWidget(form, "closeBarsButton", "Button", WIDGET_ALIGN_HIGH, WIDGET_ALIGN_LOW, 20, 20, 20, 14), "x")
-	DnD:Init(form, form, true)
+	DnD.Init(form, form, true)
 	AddReaction("closeBarsButton", function () ChangeMainWndVisible() end)
 	
 	AddReaction("calcButton1", CalcPressed1)
@@ -437,7 +437,7 @@ function Init()
 		
 	local button=createWidget(mainForm, "AORBMButton", "Button", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 50, 25, 300, 120)
 	setText(button, "MBR")
-	DnD:Init(button, button, true)
+	DnD.Init(button, button, true)
 	
 	common.RegisterReactionHandler(ButtonPressed, "execute")
 
