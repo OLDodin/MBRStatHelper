@@ -129,10 +129,12 @@ end
 
 function CalcPressed1()
 	CalcPressed(DD_KOEF)
+	m_rEditLine:SetFocus(false)
 end
 
 function CalcPressed2()
 	CalcPressed(KILL_TIME)
+	m_rEditLine:SetFocus(false)
 end
 
 function CalcPressed(aType)
@@ -193,9 +195,9 @@ function CalcPressed(aType)
 		end
 	end
 	
-	local rLevelTxt = getText(m_rEditLine)
+	local rLevelTxt = getTextString(m_rEditLine)
 	local rLevelVal = tonumber(rLevelTxt)
-	rLevelVal = CheckPercentVal(rLevelVal, 95, 0, 100, m_rEditLine)
+	rLevelVal = CheckPercentVal(rLevelVal, 90, 0, 100, m_rEditLine)
 	
 	rLevelVal = rLevelVal / 100
 	
@@ -398,7 +400,7 @@ function InitConfigForm()
 	wdg:SetMultiline(true)
 	setLocaleText(wdg)
 	m_rEditLine = createWidget(form, "EditLine1", "EditLine", nil, nil, 40, 25, 90, 414, nil, nil)
-	setText(m_rEditLine, "95")
+	setText(m_rEditLine, "90")
 	--[[
 	wdg = createWidget(form, "lvlOfArt", "TextView", nil, nil, 160, 60, grShiftX, 450)
 	wdg:SetMultiline(true)
@@ -430,6 +432,9 @@ function InitConfigForm()
 	return form
 end
 
+local function EditLineEsc(aParams)
+	aParams.widget:SetFocus(false)
+end
 
 function Init()
 	m_template = getChild(mainForm, "Template")
@@ -440,7 +445,8 @@ function Init()
 	DnD.Init(button, button, true)
 	
 	common.RegisterReactionHandler(ButtonPressed, "execute")
-
+	common.RegisterReactionHandler(EditLineEsc, "EditLineEsc")
+	
 	m_configForm = InitConfigForm()
 	
 	AddReaction("AORBMButton", function () ChangeMainWndVisible() end)
