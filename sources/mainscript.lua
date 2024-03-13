@@ -127,6 +127,7 @@ local function IsBetterResult(anOldResult, aNewResult, aType)
 	end
 end
 
+
 function CalcPressed1()
 	CalcPressed(DD_KOEF)
 	m_rEditLine:SetFocus(false)
@@ -137,7 +138,7 @@ function CalcPressed2()
 	m_rEditLine:SetFocus(false)
 end
 
-function CalcPressed(aType)
+function CalcPressed(aType)	
 	local realMaster = 0
 	local realResh = 0
 	local realBesp = 0
@@ -148,32 +149,41 @@ function CalcPressed(aType)
 	local currBesp = 0
 	local currCrit = 0
 	
+	local talentsMaster = 0
+	local talentsResh = 0
+	local talentsBesp = 0
+	local talentsCrit = 0
+	
 	local stats = avatar.GetInnateStats()
 	for i = 0, GetTableSize( stats ) - 1 do
 		local stat = stats[i]
 		if stat.sysName == "ENUM_InnateStats_Plain" then
-			currMaster = stat.effective-stat.buffs
+			talentsMaster = stat.talents
+			currMaster = stat.effective-stat.buffs-talentsMaster
 			realMaster = stat.effective
 		end
 		if stat.sysName == "ENUM_InnateStats_Rage" then
-			currResh = stat.effective-stat.buffs
+			talentsResh = stat.talents
+			currResh = stat.effective-stat.buffs-talentsResh
 			realResh = stat.effective
 		end
 		if stat.sysName == "ENUM_InnateStats_Finisher" then
-			currBesp = stat.effective-stat.buffs
+			talentsBesp = stat.talents
+			currBesp = stat.effective-stat.buffs-talentsBesp
 			realBesp = stat.effective
 		end
 	end
 
+	
 	local specStats = avatar.GetSpecialStats()
 	for i = 1, GetTableSize( specStats ) do
-		if toString(specStats[i].name) == "Удача" then 
-			currCrit = specStats[i].effective-specStats[i].buffs
-			realCrit = specStats[i].effective
+		if toString(specStats[i].name) == "Удача" or toString(specStats[i].name) == "Critical Damage" then 
+			talentsCrit = specStats[i].talents
+			currCrit = specStats[i].effective-specStats[i].buffs-talentsCrit
+			realCrit = specStats[i].effective			
 			break
 		end
 	end
-
 	
 	local amuletBonus = 0
 	local myDressedSlots = unit.GetEquipmentItemIds(avatar.GetId(), ITEM_CONT_EQUIPMENT) 
@@ -210,7 +220,7 @@ function CalcPressed(aType)
 	local useShop = getCheckBoxState(m_shopCheckBox)
 	local useOrden = getCheckBoxState(m_ordenCheckBox)
 	local useAlhim = getCheckBoxState(m_alhimCheckBox)
-	local useDoblest = getCheckBoxState(m_doblestCheckBox)
+	local useDoblest = false--getCheckBoxState(m_doblestCheckBox)
 	local useEatR = getCheckBoxState(m_eatRCheckBox)
 	local useGuildCrit = getCheckBoxState(m_guildCritCheckBox)
 	local useOrnament = getCheckBoxState(m_ornamentCheckBox)
@@ -221,7 +231,7 @@ function CalcPressed(aType)
 	if useAlhim then
 		summaStat = summaStat + 50
 	end
-	
+		
 	local topEquals = {}
 	
 	local resM, resR, resB, resCrit
@@ -238,9 +248,9 @@ function CalcPressed(aType)
 	for m=amuletBonus, summaStat, step do
 		for b=0, summaStat-m, step do
 			for crit=0, summaStat-m-b, step do
-				resM = m
-				resB = b
-				resR = summaStat-b-m-crit
+				resM = m+talentsMaster
+				resB = b+talentsBesp
+				resR = (summaStat+talentsResh)-b-m-crit
 				resCrit = crit
 				if useDoblest then
 					local maxVal = math.max(m, resR, b)
@@ -268,6 +278,8 @@ function CalcPressed(aType)
 					resM = resM + 48
 					resCrit = resCrit + 48
 				end
+				resCrit = resCrit + talentsCrit
+
 				local res = CalcResult(resM, resR, resB, resCrit, rLevelVal, aType, 1000)
 				if IsBetterResult(maxRes.value, res, aType) then
 					maxRes.value = res
@@ -386,14 +398,14 @@ function InitConfigForm()
 	m_alhimCheckBox = createWidget(form, "useAlhim", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 385)
 	m_shopCheckBox = createWidget(form, "useShop", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 410)
 	m_ordenCheckBox = createWidget(form, "useOrden", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 435)
-	m_doblestCheckBox = createWidget(form, "useDoblest", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 460)
-	m_ornamentCheckBox = createWidget(form, "useOrnament", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 320, 25, 170, 485)
+	--m_doblestCheckBox = createWidget(form, "useDoblest", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 460)
+	m_ornamentCheckBox = createWidget(form, "useOrnament", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 320, 25, 170, 460)
 	setCheckBox(m_guildCritCheckBox, false)
 	setCheckBox(m_eatRCheckBox, false)
 	setCheckBox(m_shopCheckBox, false)
 	setCheckBox(m_ordenCheckBox, false)
 	setCheckBox(m_alhimCheckBox, false)
-	setCheckBox(m_doblestCheckBox, false)
+	--setCheckBox(m_doblestCheckBox, false)
 	setCheckBox(m_ornamentCheckBox, false)
 	
 	local wdg = createWidget(form, "amountOfR", "TextView", nil, nil, 160, 60, grShiftX, 400)
@@ -413,7 +425,7 @@ function InitConfigForm()
 	setLocaleText(m_shopCheckBox)
 	setLocaleText(m_ordenCheckBox)
 	setLocaleText(m_alhimCheckBox)
-	setLocaleText(m_doblestCheckBox)
+	--setLocaleText(m_doblestCheckBox)
 	setLocaleText(m_ornamentCheckBox)
 	setLocaleText(m_mWdg)
 	setLocaleText(m_rWdg)
@@ -454,6 +466,7 @@ function Init()
 	common.RegisterEventHandler( onAOPanelLeftClick, "AOPANEL_BUTTON_LEFT_CLICK" )
 	common.RegisterEventHandler( onAOPanelRightClick, "AOPANEL_BUTTON_RIGHT_CLICK" )
 	common.RegisterEventHandler( onAOPanelChange, "EVENT_ADDON_LOAD_STATE_CHANGED" )
+
 end
 
 if (avatar.IsExist()) then
