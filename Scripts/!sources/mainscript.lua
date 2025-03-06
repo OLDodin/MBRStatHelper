@@ -1,6 +1,4 @@
-
 local m_configForm = nil
-local m_template = nil
 local m_mWdg = nil
 local m_rWdg = nil
 local m_bWdg = nil
@@ -26,11 +24,11 @@ local DOBLEST_R = 2
 local DOBLEST_B = 3
 
 function ChangeMainWndVisible()
-	if isVisible(m_configForm) then
-		DnD.HideWdg(m_configForm)
-	else
-		DnD.ShowWdg(m_configForm)
+	if not m_configForm then
+		m_configForm = CreateConfigForm()
 	end
+	swap(m_configForm)
+	
 	setLocaleText(m_mWdg)
 	setLocaleText(m_rWdg)
 	setLocaleText(m_bWdg)
@@ -227,7 +225,7 @@ function CalcPressed(aType)
 	maxRes.crit = 0
 	maxRes.doblestType = 0
 	
-	local step = 20
+	local step = 30
 
 	for m=amuletBonus, summaStat, step do
 		for b=0, summaStat-m, step do
@@ -343,8 +341,8 @@ function CalcPressed(aType)
 end
 
 
-function InitConfigForm()
-	setTemplateWidget(m_template)
+function CreateConfigForm()
+	setTemplateWidget("common")
 	local formWidth = 500
 	local form=createWidget(mainForm, "ConfigForm", "Panel", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, formWidth, 555, 100, 120)
 	priority(form, 5500)
@@ -433,10 +431,9 @@ local function EditLineEsc(aParams)
 end
 
 function Init()
-	m_template = getChild(mainForm, "Template")
-	setTemplateWidget(m_template)
+	setTemplateWidget("common")
 		
-	local button=createWidget(mainForm, "AORBMButton", "Button", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 50, 25, 300, 120)
+	local button=createWidget(mainForm, "AORBMButton", "Button", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 48, 32, 300, 120)
 	setText(button, "MBR")
 	DnD.Init(button, button, true)
 
@@ -445,7 +442,7 @@ function Init()
 	common.RegisterReactionHandler(CheckBoxChangedOn, "CheckBoxChangedOn")
 	common.RegisterReactionHandler(CheckBoxChangedOff, "CheckBoxChangedOff")
 	
-	m_configForm = InitConfigForm()
+	
 	
 	AddReaction("AORBMButton", function () ChangeMainWndVisible() end)
 	common.RegisterEventHandler( onAOPanelStart, "AOPANEL_START" )
