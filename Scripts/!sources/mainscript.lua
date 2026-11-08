@@ -357,7 +357,7 @@ function CreateConfigForm()
 
 	local descWdg = createWidget(form, "desc", "TextView", nil, nil, formWidth-25*2, 200, 25, 30)
 	setLocaleText(descWdg)
-	descWdg:SetMultiline(true)
+	descWdg:SetTextStyle({multiline = true})
 	
 	setLocaleText(createWidget(form, "lineM", "TextView", nil, nil, 600, 25, grShiftX, grShiftY))
 	setLocaleText(createWidget(form, "lineR", "TextView", nil, nil, 600, 25, grShiftX, grShiftY+30))
@@ -373,7 +373,7 @@ function CreateConfigForm()
 	m_diffWdg = createWidget(form, "resDiff", "TextView", nil, nil, 600, 25, formWidth/2+100, grShiftY+30*5)
 	
 	m_amuletInfo = createWidget(form, "amuletInfo", "TextView", nil, nil, formWidth-grShiftX*2, 60, grShiftX, grShiftY+30*3+15)
-	m_amuletInfo:SetMultiline(true)
+	m_amuletInfo:SetTextStyle({multiline = true})
 	
 	m_guildCritCheckBox = createWidget(form, "useGuildCrit", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 335)
 	m_eatRCheckBox = createWidget(form, "useEatR", "CheckBox", WIDGET_ALIGN_LOW, WIDGET_ALIGN_LOW, 270, 25, 220, 360)
@@ -391,13 +391,13 @@ function CreateConfigForm()
 	setCheckBox(m_ornamentCheckBox, false)
 	
 	local wdg = createWidget(form, "amountOfR", "TextView", nil, nil, 160, 60, grShiftX, 400)
-	wdg:SetMultiline(true)
+	wdg:SetTextStyle({multiline = true})
 	setLocaleText(wdg)
 	m_rEditLine = createWidget(form, "EditLine1", "EditLine", nil, nil, 40, 25, 90, 414, nil, nil)
 	setText(m_rEditLine, "90")
 	--[[
 	wdg = createWidget(form, "lvlOfArt", "TextView", nil, nil, 160, 60, grShiftX, 450)
-	wdg:SetMultiline(true)
+	wdg:SetTextStyle({multiline = true})
 	setLocaleText(wdg)
 	m_artEditLine = createWidget(form, "EditLine2", "EditLine", nil, nil, 40, 25, 90, 464, nil, nil)
 	setText(m_artEditLine, "5")
